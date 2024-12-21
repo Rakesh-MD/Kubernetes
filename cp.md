@@ -154,6 +154,8 @@ kubectl version
 Run the following command on the controlplane node to initialize the Kubernetes cluster:
 
 ```bash
+kubeadm config images pull --kubernetes-version v1.32.0
+
 kubeadm init
 ```
 
