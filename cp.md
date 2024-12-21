@@ -194,3 +194,25 @@ worker1        NotReady   <none>          6m3s   v1.32.0
 ```
 
 Now, your Kubernetes cluster should be initialized with both control-plane and worker nodes.
+
+## 8. Install a Network Plugin
+
+Install Weave Net:
+
+```bash
+kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+```
+
+Wait for 30 seconds or so, then run:
+
+```bash
+kubectl get nodes
+```
+
+Nodes should now be ready:
+
+```bash
+NAME              STATUS     ROLES           AGE     VERSION
+ip-172-31-11-74   Ready      control-plane    2m57s    v1.24.0
+ip-172-31-9-67    Ready      <none>           1m52s    v1.24.0
+```
