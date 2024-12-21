@@ -1,1 +1,150 @@
 
+sudo -i
+To ensure that the node does not use swap memory, run the following command:
+
+sudo swapoff -a && sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
+sudo hostnamectl set-hostname worker1
+
+root@ip-172-31-89-136:~# bash
+root@worker1:~#
+
+4. Installing Docker Engine on both nodes
+Doc Ref : Installing Docker
+https://docs.docker.com/engine/install/ubuntu/
+
+sudo apt-get update
+sudo apt-get install ca-certificates curl -y 
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y
+
+All that remains is to start and enable the Docker service. To do this, use the following commands:
+
+sudo systemctl start docker && sudo systemctl enable docker 
+
+Before proceeding to the next step, verify that Docker is working as expected.
+
+sudo systemctl status docker
+
+docker ps
+
+5. Configuring Cgroup Driver
+For the kubelet process to work correctly, its cgroup driver needs to match the one used by Docker.
+
+To do this, you can adjust the Docker configuration using the following command on each node:
+
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m"
+  },
+  "storage-driver": "overlay2"
+}
+EOF
+For more details, see configuring a cgroup driver Once you’ve adjusted the configuration on each node, restart the Docker service and its corresponding daemon.
+
+sudo systemctl daemon-reload && sudo systemctl restart docker
+
+
+# Configure and restart containerd
+sudo containerd config default | sudo tee /etc/containerd/config.toml > /dev/null
+sudo systemctl restart containerd
+sudo systemctl status containerd
+
+Confirm the presence of the socket:
+bash
+Copy code
+ls -l /var/run/containerd/containerd.sock
+
+
+6. install kubeadm, kubelet, and kubectl on each node
+Installing kubeadm, kubelet, and kubectl
+https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+
+These instructions are for Kubernetes v1.32.
+
+Update the apt package index and install packages needed to use the Kubernetes apt repository:
+
+sudo apt-get update
+# apt-transport-https may be a dummy package; if so, you can skip that package
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+
+Download the public signing key for the Kubernetes package repositories. The same signing key is used for all repositories so you can disregard the version in the URL:
+
+# If the directory `/etc/apt/keyrings` does not exist, it should be created before the curl command, read the note below.
+# sudo mkdir -p -m 755 /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+Add the appropriate Kubernetes apt repository. Please note that this repository have packages only for Kubernetes 1.32; for other Kubernetes minor versions, you need to change the Kubernetes minor version in the URL to match your desired minor version (you should also check that you are reading the documentation for the version of Kubernetes that you plan to install).
+
+# This overwrites any existing configuration in /etc/apt/sources.list.d/kubernetes.list
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+Update the apt package index, install kubelet, kubeadm and kubectl, and pin their version:
+
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+
+The last line with the apt-mark hold command is optional, but highly recommended. This will prevent these packages from being updated until you unhold them using the command:
+
+sudo apt-mark unhold kubelet kubeadm kubectl
+
+
+7. Check the version of kubeadm, kubelet & kubectl installed
+kubeadm version
+kubelet --version
+kubectl version --short
+
+(Optional) Enable the kubelet service before running kubeadm:
+
+sudo systemctl enable --now kubelet
+
+kubeadm join 172.31.19.131:6443 --token ddxfi3.y56eub81uio9kvgs \
+        --discovery-token-ca-cert-hash sha256:3e8c7cd34396ac21b7a70a2484fc2343fd4c00d60302487cc4637ebd34f698d6
+
+The error you're seeing (/etc/kubernetes/pki/ca.crt already exists) indicates that the node you're trying to join has already been initialized or partially configured as part of a Kubernetes cluster. The ca.crt file is already present, which means the worker node has been part of a previous attempt to join the cluster, or Kubernetes has been installed on it before.
+
+Here are the steps you can take to resolve the issue:
+
+1. Remove existing Kubernetes files on the worker node
+If you want to reset the worker node and start fresh, remove the existing Kubernetes files that are preventing the node from joining again.
+
+On the worker node, run the following commands:
+
+bash
+Copy code
+sudo rm -rf /etc/kubernetes/pki
+sudo rm -rf /etc/kubernetes/manifests
+sudo rm -rf /etc/kubernetes/kubelet.conf
+sudo rm -rf /var/lib/kubelet/*
+These commands will remove the Kubernetes certificates, kubelet configurations, and state files, which should allow you to join the cluster again.
+
+2. Re-run the kubeadm join command
+After cleaning up the files, you can try running the kubeadm join command again:
+
+bash
+Copy code
+kubeadm join 172.31.19.131:6443 --token ddxfi3.y56eub81uio9kvgs --discovery-token-ca-cert-hash sha256:3e8c7cd34396ac21b7a70a2484fc2343fd4c00d60302487cc4637ebd34f698d6
+3. Check kubelet status on the worker node
+Once the node joins successfully, check the status of the kubelet service:
+
+bash
+Copy code
+sudo systemctl status kubelet
+
+
+
