@@ -6,7 +6,7 @@
 To ensure that the node does not use swap memory, run the following commands:
 
 ```bash
-sudo swapoff -a && sudo sed -i '/ swap / s/^\(.*\)$/#/g' /etc/fstab
+sudo swapoff -a && sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 ```
 
 Set the hostname for the node:
