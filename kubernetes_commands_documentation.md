@@ -62,10 +62,10 @@ kubectl get svc
 
 ## 6. Generate the Node Join Command
 
-To add Worker nodes to the cluster, generate the `kubeadm join` command:
+To add Worker nodes to the cluster, use the following command on each Worker node:
 
 ```bash
-kubeadm token create --print-join-command
+kubeadm join 172.31.16.150:6443 --token mlq023.yo11ym9abta6dqh4     --discovery-token-ca-cert-hash sha256:5908ca97579a4bf7c15f8ea55807e7d83282346af84e8935415d6d5c0db522d6
 ```
 
 ## 7. Verify Pods
@@ -83,15 +83,6 @@ Use the external IP and port from the `kubectl get svc` output to test the appli
 ```bash
 curl http://<NODE-IP>:<NODE-PORT>
 ```
-
-## 9. View Command History
-
-To see the history of commands:
-
-```bash
-history
-```
-
 ---
 
 ## Additional Notes
