@@ -1,0 +1,25 @@
+Step 2: Label the Worker Nodes
+Use the kubectl label command to assign a role to the worker nodes. For example:
+
+bash
+Copy code
+kubectl label node worker1 node-role.kubernetes.io/worker=
+kubectl label node worker2 node-role.kubernetes.io/worker=
+The label key is node-role.kubernetes.io/worker.
+The = at the end ensures the value is empty, which Kubernetes interprets as a role assignment.
+
+
+Notes:
+Role Names Are Informational: Kubernetes does not enforce any behavior based on these roles. They are used primarily for organization and display purposes.
+
+Control Plane Roles: The control plane node is automatically assigned the role control-plane. If it's not visible, you can explicitly set it using:
+
+bash
+Copy code
+kubectl label node controlplane node-role.kubernetes.io/control-plane=
+Worker Role Customization: If you want a custom role, you can replace worker with your desired role, e.g., node-role.kubernetes.io/storage= or node-role.kubernetes.io/compute=.
+
+This way, you can organize your nodes with meaningful roles!
+
+vi setup_k8s.sh
+ sudo hostnamectl set-hostname workr-1
