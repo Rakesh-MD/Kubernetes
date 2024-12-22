@@ -30,7 +30,8 @@ EOF
    24  kubectl create deployment nginx --image=nginx
    25  kubectl expose deployment nginx --port=80 --type=NodePort
    26  kubectl get svc
-  
+
+kubeadm token create --print-join-command
    29  kubectl get pods
    30  curl http://54.196.220.129:31677
    31  history
