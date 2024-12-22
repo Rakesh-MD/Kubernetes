@@ -35,3 +35,10 @@ kubeadm token create --print-join-command
    29  kubectl get pods
    30  curl http://54.196.220.129:31677
    31  history
+
+
+
+kubectl delete node ip-172-31-85-151
+kubectl delete node ip-172-31-93-178
+
+
