@@ -43,7 +43,7 @@ sudo apt-mark hold kubelet kubeadm kubectl
 # Disable swap
 echo "Disabling swap..."
 sudo swapoff -a
-sudo sed -i '/ swap / s/^\(.*\)$/#/g' /etc/fstab
+sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 
 # Enable necessary kernel modules
 echo "Enabling necessary kernel modules..."
